@@ -30,14 +30,16 @@ window.addEventListener('onauth', (event) => {
 function runtimeInitDone() {
   console.log("Runtime init done.");
 
-  // check if we have modules to start
-  if (pendingModules.length > 0) {
-    pendingModules.forEach(function(persistm) {
-      console.log("Starting:", persistm.data.name);
-      RuntimeMngr.createModule(persistm);
-    });
+  if (window.pendingModules) {
+    // check if we have modules to start
+    if (window.pendingModules.length > 0) {
+      window.pendingModules.forEach(function(persistm) {
+        console.log("Starting:", persistm.data.name);
+        RuntimeMngr.createModule(persistm);
+      });
+    }
+    // empty pending modules
+    window.pendingModules = [];
   }
-  // empty pending modules
-  pendingModules = [];
 }
 
