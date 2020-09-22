@@ -4,11 +4,10 @@
   "description": "CONIX Browser WASM runtime manager; Connect to ARTS and launch WASI WASM modules",
   "main": "index.js",
   "scripts": {
-    "collect-static": "cp ../wasm-apps/wasm-files/* static/",
-    "dev": "npm run collect-static && parcel index.html",
+    "dev": "parcel index.html",
     "prebuild": "shx rm -rf runtime-mngr/*",
-    "build": "npm run collect-static && parcel build index.js --public-url ./runtime-mngr -d ./runtime-mngr",
-    "deploy": "rsync -zarvh --delete ./runtime-mngr/* wiselab@arena.andrew.cmu.edu:/home/wiselab/spatial-services-docker/www-arena-test/runtime-mngr",
+    "build": "parcel build index.js --public-url ./runtime-mngr -d ./runtime-mngr",
+    "deploy": "rsync -zarvh --delete ./runtime-mngr/* wiselab@arena.andrew.cmu.edu:/home/wiselab/arena-services-docker/ARENA-core/runtime-mngr",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -19,15 +18,18 @@
   "devDependencies": {
     "jest": "^26.0.1",
     "parcel-bundler": "^1.12.4",
-    "parcel-plugin-static-files-copy": "^2.3.1",
+    "parcel-plugin-static-files-copy": "^2.5.0",
     "shx": "^0.3.2",
     "typescript": "^3.9.3"
   },
   "dependencies": {
+    "@wasmer/wasi": "^0.12.0",
     "@wasmer/wasm-transformer": "^0.10.2",
     "@wasmer/wasmfs": "^0.10.2",
     "base64-arraybuffer": "^0.2.0",
+    "my-dependency": "^1.0.1",
     "paho-mqtt": "^1.1.0",
+    "parcel": "^1.12.4",
     "path-browserify": "^1.0.1",
     "query-string": "^6.13.1",
     "ts-node": "^8.9.0",

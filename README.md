@@ -10,10 +10,11 @@ See [ARTS](https://github.com/conix-center/arts/)
 
 If you want to develop code for the ARENA Browser Runtime Manager, you will need [Parcel](https://parceljs.org/), and [npm](https://www.npmjs.com/) installed for your environment.  
 
-1. Install wasmer dependencies:  
+1. Install dependencies:  
 ```
-npm install --save @wasmer/wasi @wasmer/wasmfs
+npm install 
 ```
+On a Mac, you will need the [Xcode Command Line Tools](https://developer.apple.com/download/more/?=for%20Xcode) *before* installing parcel.
 Check more details at: https://docs.wasmer.io/integrations/js/wasi/browser
 
 2. Create the output folder and start the dev server:  
