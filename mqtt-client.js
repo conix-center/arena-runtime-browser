@@ -18,8 +18,8 @@ export default class MqttClient {
     // handle default this.settings
     st = st || {};
     this.settings = {
-      uri: st.uri !== undefined ? st.uri : "wss://spatial.andrew.cmu.edu:4443/mqtt/",
-      host: st.host !== undefined ? st.host : "spatial.andrew.cmu.edu",
+      uri: st.uri !== undefined ? st.uri : "wss://arena.andrew.cmu.edu/mqtt/",
+      host: st.host !== undefined ? st.host : "arena.andrew.cmu.edu",
       port: st.port !== undefined ? st.port : 8083,
       path: st.path !== undefined ? st.path : "/mqtt/",
       clientid:

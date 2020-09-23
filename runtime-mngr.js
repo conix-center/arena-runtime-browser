@@ -162,6 +162,19 @@ export function createModule(persist_mod) {
     mqtthost.replace("/mqtt", "");
   }
 
+  let muuid = uuidv4(); // for per client, create a random uuid;
+  // check instantiate (single/per 'client')
+  if (pdata.instantiate == "single") {
+    // object_id in persist obj is used as the uuid, if it is a valid uuid
+    let uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuid_regex.test(persist_mod.object_id)) muuid = persist_mod.object_id;
+    else {
+      console.log(
+        "Error! Object id must be a valid uuid (for instantiate=single)!"
+      );
+    }
+  } 
+
   // get query string
   let qstring = QueryString.parse(location.search);
 
@@ -170,8 +183,9 @@ export function createModule(persist_mod) {
     scene: window.globals ? window.globals.renderParam : qstring["scene"],
     mqtth: mqtthost,
     cameraid: window.globals ? window.globals.camName : undefined,
-    username: window.globals ? window.globals.userParam : qstring["name"],
+    username: window.globals ? window.globals.displayName : qstring["name"],
     runtimeid: runtime.uuid,
+    moduleid: muuid,
     ...qstring, // add all url params
   };
 
@@ -187,19 +201,6 @@ export function createModule(persist_mod) {
       pdata.channels[i].params.topic = replaceVars(pdata.channels[i].params.topic, rvars);
     }
   }
-
-  let muuid = undefined;
-  // check instantiate (single/per 'client')
-  if (pdata.instantiate == "single") {
-    // object_id in persist obj is used as the uuid, if it is a valid uuid
-    let uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (uuid_regex.test(persist_mod.object_id)) muuid = persist_mod.object_id;
-    else {
-      console.log(
-        "Error! Object id must be a valid uuid (for instantiate=single)!"
-      );
-    }
-  } // for per client, let ARTSMessages.mod() create a random uuid;
 
   let fn;
   if (pdata.filetype == 'WA') {
