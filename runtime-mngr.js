@@ -69,6 +69,8 @@ export async function init(settings) {
         ? settings.filestore_location
         : dft_store_location,
     dbg: settings.dbg !== undefined ? settings.dbg : false,
+    mqtt_username: settings.mqtt_username !== undefined ? settings.mqtt_username : "non_auth",
+    mqtt_token: settings.mqtt_token !== undefined ? settings.mqtt_token : null,
   };
 
   console.log(runtime);
@@ -96,6 +98,8 @@ export async function init(settings) {
     subscribeTopics: [runtime.reg_topic], // subscribe to reg topic
     onMessageCallback: onMqttMessage,
     dbg: runtime.dbg,
+    mqtt_username: runtime.mqtt_username,
+    mqtt_token: runtime.mqtt_token,
   });
 
   // connect
@@ -234,7 +238,7 @@ export function createModule(persist_mod) {
     else console.log("Error! Object id must be a valid uuid!");
   } // nothing to do for multiple; a random uuid is created in ARTSMessages.mod(undefined, ARTSMessages.Action.create);
 
-  // if instanciate 'per client', save this module uuid to delete before exit
+  // if instantiate 'per client', save this module uuid to delete before exit
   if (pdata.instantiate == "client") {
     console.log("Saving:", modCreateMsg.data);
     runtime.client_modules.push(modCreateMsg.data);
@@ -342,7 +346,7 @@ function handleARTSMsg(msg) {
       // create a (js worker) channel for the workers to talk
       mod.channel = new MessageChannel();
 
-      // start an mqtt client for the module io (in moduleio worker); tranfer ownership of the port
+      // start an mqtt client for the module io (in moduleio worker); transfer ownership of the port
       ioworker.postMessage(
         {
           type: WorkerMessages.msgType.start,
@@ -350,6 +354,8 @@ function handleARTSMsg(msg) {
             uuid: mod.uuid,
             reg_topic: mod.reg_topic,
             stdin_topic: mod.stdin_topic,
+            mqtt_username: runtime.mqtt_username,
+            mqtt_token: runtime.mqtt_token,
           }, // module object with only needed data
           worker_port: mod.channel.port2,
           shared_array_buffer: mod.sb,

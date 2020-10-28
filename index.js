@@ -13,7 +13,7 @@ window.addEventListener('onauth', (event) => {
   if (globals) {
     let mqttParamZ;
     if (defaults) mqttParamZ=defaults.mqttParamZ;
-    // use globals.mqttParam/defaults.mqttParamZ for mqtt server, if exists; fallback to mqqt server uri from browser location
+    // use globals.mqttParam/defaults.mqttParamZ for mqtt server, if exists; fallback to mqtt server uri from browser location
     mqtt_uri = globals.mqttParam !== undefined ? globals.mqttParam : mqttParamZ !== undefined ? "wss://" + defaults.mqttParamZ + "/mqtt/" : "wss://" + location.hostname + (location.port ? ':'+location.port : '') + "/mqtt/";
     // use globals.userParam for runtime name, if exists; otherwise let the runtime manager assign one
     name = globals.userParam !== undefined ? "rt-"+Math.round(Math.random() * 10000)+"-"+globals.userParam : undefined;
@@ -23,7 +23,9 @@ window.addEventListener('onauth', (event) => {
     mqtt_uri: mqtt_uri, 
     onInitCallback: runtimeInitDone, 
     name: name,
-    dbg: true
+    dbg: true,
+    mqtt_username: event.detail.mqtt_username,
+    mqtt_token: event.detail.mqtt_token,
   });
 });
 
@@ -42,4 +44,3 @@ function runtimeInitDone() {
     window.pendingModules = [];
   }
 }
-

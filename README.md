@@ -22,7 +22,7 @@ Check more details at: https://docs.wasmer.io/integrations/js/wasi/browser
 mkdir runtime-mngr
 npm run dev
 ```
-Point your browser to http://localhost:1234 and you should see [index_dev.html](index_dev.html).
+Point your browser to http://localhost:1234 and you should see [index.html](index.html).
 
 You can build and deploy (check the deploy server/path in [package.json](package.json))
 ```

@@ -37,6 +37,8 @@ export default class MqttClient {
       dbg: st.dbg !== undefined ? st.dbg : false,
       reconnect: st.reconnect !== undefined ? st.reconnect : true,
       useSSL: st.useSSL !== undefined ? st.useSSL : true,
+      mqtt_username: st.mqtt_username,
+      mqtt_token: st.mqtt_token,
     };
 
     if (this.settings.willMessage !== undefined)
@@ -98,7 +100,9 @@ export default class MqttClient {
         onFailure: () => { throw new Error("Could not connect!"); },
         willMessage: _this.settings.willMessage,
         reconnect: _this.settings.reconnect,
-        useSSL: _this.settings.useSSL
+        useSSL: _this.settings.useSSL,
+        userName: _this.settings.mqtt_username,
+        password: _this.settings.mqtt_token,
       });
     });
   }

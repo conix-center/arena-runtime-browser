@@ -39,6 +39,8 @@ onmessage = async function (e) {
       subscribeTopics: [modData.stdin_topic], // subscribe to stdin topic
       onMessageCallback: onMqttMessage.bind(null, modData.uuid),
       dbg: false,
+      mqtt_username: modData.mqtt_username,
+      mqtt_token: modData.mqtt_token,
     });
 
     await mod[modData.uuid].mc.connect();
