@@ -7,7 +7,7 @@
     "dev": "parcel index.html",
     "prebuild": "shx rm -rf runtime-mngr/*",
     "build": "parcel build index.js --public-url ./runtime-mngr -d ./runtime-mngr",
-    "deploy": "rsync -zarvh --delete ./runtime-mngr/* ../ARENA-core/runtime-mngr",
+    "deploy": "rsync -zarvh --delete ./runtime-mngr/* wiselab@arena.andrew.cmu.edu:/home/wiselab/arena-services-docker/ARENA-core/runtime-mngr",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
