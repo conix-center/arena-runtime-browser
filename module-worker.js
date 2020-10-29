@@ -20,7 +20,7 @@ onmessage = async function (e) {
     let wasmFilePath = e.data.arts_mod_instance_data.filename;
     console.log("Starting new module",  e.data.arts_mod_instance_data);
 
-    console.time("|T: Module Startup/Instanciate");
+    console.time("|T: Module Startup/Instantiate");
 
     // Fetch our Wasm File
     let response;
@@ -119,7 +119,7 @@ onmessage = async function (e) {
       }
     }
 
-    console.timeEnd("|T: Module Startup/Instanciate");
+    console.timeEnd("|T: Module Startup/Instantiate");
 
     console.time("|T: Module Executed for");
     // Start the WASI instance
