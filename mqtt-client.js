@@ -136,6 +136,7 @@ export default class MqttClient {
 
     if (responseObject.errorCode !== 0) {    
       console.error("Mqtt ERROR: " + responseObject.errorMessage + "\n");
+    }
   }
 
   /**
