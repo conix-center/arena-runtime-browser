@@ -38,7 +38,7 @@ export async function init(settings) {
         ? settings.name
         : "rt-" + Math.round(Math.random() * 10000) + "@" + navigator.product,
     max_nmodules:
-      settings.max_nmodules !== undefined ? settings.max_nmodules : 1,
+      settings.max_nmodules !== undefined ? settings.max_nmodules : 10,
     apis: settings.apis !== undefined ? settings.apis : dft_apis,
     reg_topic:
       settings.reg_topic !== undefined
@@ -63,16 +63,17 @@ export async function init(settings) {
     mqtt_uri: settings.mqtt_uri,
     onInitCallback: settings.onInitCallback,
     modules: [],
+    pendingModules = [],
     client_modules: [],
     filestore_location:
       settings.filestore_location != undefined
         ? settings.filestore_location
         : dft_store_location,
+    isRegistered = false,
     dbg: settings.dbg !== undefined ? settings.dbg : false,
   };
 
-  console.log(runtime);
-  runtime.isRegistered = false;
+  console.info(runtime);
 
   // create last will message
   let lastWill = JSON.stringify(
@@ -102,7 +103,7 @@ export async function init(settings) {
   try {
     await mc.connect();
   } catch (error) {
-    console.log(error); // Failure!
+    console.error(error); // Failure!
     return;
   }
   // subscribe to **all** debug messages; for debug/viz purposes only
@@ -134,6 +135,12 @@ export function signal(modUuid, signo) {
 export function createModule(persist_mod) {
   let pdata = persist_mod.data;
 
+  // if runtime is not registered yet, add to pending modules list so they are processed later
+  if (runtime.isRegistered == false) {
+    runtime.pendingModules.push(pobj);
+    return;
+  }
+
   // function to replace variables
   function replaceVars(text, rvars) {
     let result;
@@ -146,7 +153,6 @@ export function createModule(persist_mod) {
     }
     return result;
   }
-
 
   // get mqtt host from globals
   let mqtthost = window.globals ? window.globals.mqttParamZ : undefined;
@@ -163,13 +169,13 @@ export function createModule(persist_mod) {
   }
 
   let muuid = uuidv4(); // for per client, create a random uuid;
-  // check instantiate (single/per 'client')
+  // check if instantiate is "single"
   if (pdata.instantiate == "single") {
     // object_id in persist obj is used as the uuid, if it is a valid uuid
     let uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuid_regex.test(persist_mod.object_id)) muuid = persist_mod.object_id;
     else {
-      console.log(
+      console.error(
         "Error! Object id must be a valid uuid (for instantiate=single)!"
       );
     }
@@ -231,22 +237,38 @@ export function createModule(persist_mod) {
     let regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (regex.test(persist_mod.object_id))
       modCreateMsg.data.uuid = persist_mod.object_id;
-    else console.log("Error! Object id must be a valid uuid!");
+    else console.error("Error! Object id must be a valid uuid!");
   } // nothing to do for multiple; a random uuid is created in ARTSMessages.mod(undefined, ARTSMessages.Action.create);
 
   // if instanciate 'per client', save this module uuid to delete before exit
   if (pdata.instantiate == "client") {
-    console.log("Saving:", modCreateMsg.data);
+    //console.log("Saving:", modCreateMsg.data);
     runtime.client_modules.push(modCreateMsg.data);
-
   }
 
   // TODO: save pending req uuid and check arts responses
   // NOTE: object_id of arts messages are used as a transaction id
   // runtime.pending_req.push(modCreateMsg.object_id); // pending_req is a list with object_id of requests waiting arts response
 
-  console.log(modCreateMsg);
+  console.info(modCreateMsg);
   mc.publish(runtime.arts_ctl_topic, modCreateMsg);
+}
+
+// called once the runtime is initialized; create modules requested meantime
+function processPendingModules() {
+  if (runtime.isRegistered == false) {
+    console.error("Called processPendingModules before runtime is initialized!");
+    return; // we should stop here to avoid duplicating pendingModules list
+  }
+  // check if we have modules to start
+  if (runtime.pendingModules.length > 0) {
+    runtime.pendingModules.forEach(function(persistm) {
+      console.info("Starting:", persistm.data.name);
+      createModule(persistm);
+    });
+  }
+  // empty pending modules
+  runtime.pendingModules = [];
 }
 
 // register runtime
@@ -265,14 +287,14 @@ function registerRuntime() {
 function onMqttMessage(message) {
   // output module stdout; for debug/viz purposes (in init we subscribed to runtime.dbg_topic/#)
   if (message.destinationName.startsWith(runtime.dbg_topic + "/stdout/")) {
-    console.log("[" + message.destinationName + "] " + message.payloadString);
+    console.info("[" + message.destinationName + "] " + message.payloadString);
     return;
   }
 
   try {
     var msg = JSON.parse(message.payloadString);
   } catch (err) {
-    console.log(
+    console.error(
       "Could not parse message: [" + message.destinationName + "==" + +"]",
       message.payloadString,
       err
@@ -291,7 +313,7 @@ function handleARTSMsg(msg) {
     if (msg.object_id == runtime.reg_uuid) {
       // check if result was ok
       if (msg.data.result != ARTSMessages.Result.ok) {
-        console.log("Error registering runtime:" + msg.data);
+        console.error("Error registering runtime:" + msg.data);
         return;
       }
 
@@ -302,7 +324,10 @@ function handleARTSMsg(msg) {
       mc.subscribe(runtime.ctl_topic);
 
       // runtime registered; signal init is done and ready to roll
-      if (runtime.onInitCallback != undefined) runtime.onInitCallback();
+      if (runtime.onInitCallback != undefined) {
+        processPendingModules(); // startup pending modules; runtime.isRegistered must be true;
+        runtime.onInitCallback();
+      }
 
       return;
     }
@@ -310,7 +335,7 @@ function handleARTSMsg(msg) {
 
   // below, only handle module requests
   if (msg.type != ARTSMessages.Type.req || msg.data.type != ARTSMessages.ObjType.mod) {
-    console.log("Runtime mngr: ignoring non module request msg.")
+    console.info("Runtime mngr: ignoring non module request msg.")
     return;
   }
 
@@ -324,7 +349,7 @@ function handleARTSMsg(msg) {
 
       // also return if filetype is not WASM
       if (mod.filetype !== 'WA') {
-        console.log("Received module request for filetype not supported.")
+        console.error("Received module request for filetype not supported.")
         return;
       }
 
@@ -364,7 +389,7 @@ function handleARTSMsg(msg) {
     // start a worker to run the wasm module
     let mworker = new Worker("module-worker.js");
 
-    console.log(msg);
+    //console.log(msg);
     if (msg.migratetx_start)
       console.log(
         "|T: Migration - State Publish to Module Startup:",
@@ -412,7 +437,7 @@ function handleARTSMsg(msg) {
 
     runtime.modules[msg.data.uuid].del_start = Date.now(); // TMP
 
-    console.log("Posting kill to module uuid", msg.data.uuid);
+    console.info("Posting kill to module uuid", msg.data.uuid);
     // send signal to module through moduleio; worker will send message back when done (handled by onWorkerMessage)
     ioworker.postMessage({
       type: WorkerMessages.msgType.signal,
@@ -424,7 +449,7 @@ function handleARTSMsg(msg) {
 
 // on reception of message from module worker
 function onWorkerMessage(e) {
-  console.log("Module done:", e.data);
+  console.info("Module done:", e.data);
 
   // expect a module finish message
   if (e.data.type != WorkerMessages.msgType.finish) return;
@@ -432,7 +457,7 @@ function onWorkerMessage(e) {
   let mod = runtime.modules[e.data.mod_uuid];
 
   if (mod === undefined) {
-    console.log("Could not find module.");
+    console.error("Could not find module.");
     return;
   }
 
