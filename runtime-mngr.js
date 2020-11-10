@@ -63,13 +63,13 @@ export async function init(settings) {
     mqtt_uri: settings.mqtt_uri,
     onInitCallback: settings.onInitCallback,
     modules: [],
-    pendingModules = [],
+    pendingModules: [],
     client_modules: [],
     filestore_location:
       settings.filestore_location != undefined
         ? settings.filestore_location
         : dft_store_location,
-    isRegistered = false,
+    isRegistered: false,
     dbg: settings.dbg !== undefined ? settings.dbg : false,
   };
 
@@ -137,7 +137,7 @@ export function createModule(persist_mod) {
 
   // if runtime is not registered yet, add to pending modules list so they are processed later
   if (runtime.isRegistered == false) {
-    runtime.pendingModules.push(pobj);
+    runtime.pendingModules.push(persist_mod);
     return;
   }
 
@@ -242,7 +242,7 @@ export function createModule(persist_mod) {
 
   // if instanciate 'per client', save this module uuid to delete before exit
   if (pdata.instantiate == "client") {
-    //console.log("Saving:", modCreateMsg.data);
+    if (runtime.dbg == true) console.log("Saving:", modCreateMsg.data);
     runtime.client_modules.push(modCreateMsg.data);
   }
 
@@ -307,6 +307,7 @@ function onMqttMessage(message) {
 
 // handle arts messages
 function handleARTSMsg(msg) {
+  if (runtime.dbg == true) console.log("Runtime-Mngr - rcv msg:", msg);
   // response from ARTS
   if (msg.type === ARTSMessages.Type.resp) {
     // response to reg request
@@ -389,7 +390,7 @@ function handleARTSMsg(msg) {
     // start a worker to run the wasm module
     let mworker = new Worker("module-worker.js");
 
-    //console.log(msg);
+    if (runtime.dbg == true) console.log("Runtime-Mngr - msg:", msg); 
     if (msg.migratetx_start)
       console.log(
         "|T: Migration - State Publish to Module Startup:",
@@ -449,7 +450,7 @@ function handleARTSMsg(msg) {
 
 // on reception of message from module worker
 function onWorkerMessage(e) {
-  console.info("Module done:", e.data);
+  if (runtime.dbg == true) console.log("Runtime-Mngr - Module done:", e.data);
 
   // expect a module finish message
   if (e.data.type != WorkerMessages.msgType.finish) return;
