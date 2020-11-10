@@ -115,7 +115,7 @@ export default class MqttClient {
     try {
       this.mqttc.disconnect();
     } catch (err) {
-      if (this.settings.dbg == true) console.log("MQTT Disconnected.");
+      console.error("MQTT Disconnected.");
     }
   }
 
@@ -123,7 +123,7 @@ export default class MqttClient {
     try {
       this.mqttc.disconnect();
     } catch (err) {
-      if (this.settings.dbg == true) console.log("MQTT Disconnected.");
+      console.error("MQTT Disconnected.");
     }
     clientConnect();
   }
@@ -132,12 +132,10 @@ export default class MqttClient {
    * Callback; Called when the client loses its connection
    */
   onConnectionLost(responseObject) {
-    if (this.settings.dbg == true) console.log("Mqtt client disconnected...");
+    console.error("Mqtt client disconnected...");
 
-    if (responseObject.errorCode !== 0) {
-      if (this.settings.dbg == true)
-        console.log("Mqtt ERROR: " + responseObject.errorMessage + "\n");
-    }
+    if (responseObject.errorCode !== 0) {    
+      console.error("Mqtt ERROR: " + responseObject.errorMessage + "\n");
   }
 
   /**
@@ -170,7 +168,7 @@ export default class MqttClient {
   }
 
   unsubscribe(topic) {
-    console.log("Unsubscribing :" + topic);
+    if (this.settings.dbg == true) console.log("Unsubscribing :" + topic);
     this.mqttc.unsubscribe(topic);
   }
 }
