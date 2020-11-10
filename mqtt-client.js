@@ -49,15 +49,12 @@ export default class MqttClient {
 
   async connect() {
     if (this.settings.uri) {
-      if (this.settings.dbg == true) {
-        console.log("Connecting [uri]: ", this.settings.uri);
-        // init Paho client connection
-        this.mqttc = new Paho.Client(
-          this.settings.uri,
-          this.settings.clientid
-        );
-
-      }  
+      if (this.settings.dbg == true) console.log("Connecting [uri]: ", this.settings.uri);
+      // init Paho client connection
+      this.mqttc = new Paho.Client(
+        this.settings.uri,
+        this.settings.clientid
+      );  
     } else {
       let wss = this.settings.useSSL == true ? "wss://": "ws://";
       console.log("Connecting [host,port,path]: " + wss + this.settings.host + ":" + this.settings.port + this.settings.path);
