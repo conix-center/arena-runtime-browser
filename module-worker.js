@@ -12,7 +12,7 @@ import { lowerI64Imports } from "@wasmer/wasm-transformer";
 import * as Base64 from 'base64-arraybuffer'
 
 import * as WorkerMessages from "/worker-msgs.js";
-import * as CSI from "/csi.js";
+import * as ASI from "/asi.js";
 import moduleIO from "/moduleio.js"
 
 onmessage = async function (e) {
@@ -40,14 +40,14 @@ onmessage = async function (e) {
     try {
       // Transform the WebAssembly module interface (https://docs.wasmer.io/integrations/js/module-transformation)
       const loweredWasmBytes = await lowerI64Imports(wasmBytes);
-    
+
       // Compile the WebAssembly file
       wasmModule = await WebAssembly.compile(loweredWasmBytes);
     } catch(err) {
       console.log("Could not compile file (exists?):", wasmFilePath);
       return;
     }
-    
+
     // instance to handle the IO for the new module; creates wasmFs intance
     let mio = new moduleIO({shared_array_buffer: e.data.shared_array_buffer, worker_port: e.data.worker_port, mod_data: e.data.arts_mod_instance_data});
 
@@ -56,7 +56,7 @@ onmessage = async function (e) {
     e.data.arts_mod_instance_data.env.split(" ").forEach(function (evar) {
         let evarkv = evar.split("=");
         wasi_env[evarkv[0]] = evarkv[1];
-    });    
+    });
 
     // if we are restoring the state of the program, set CWLIB_JTEL to indicate that to the module (JTEL = Jump To Event Loop)
     if (e.data.memory !== undefined) {
@@ -82,7 +82,7 @@ onmessage = async function (e) {
       bindings: {
         ...browserBindings,
         fs: mio.wasmFs.fs,
-        mio: mio // attachIO will attach the read/write functions for channels when wasi path_open is called  
+        mio: mio // attachIO will attach the read/write functions for channels when wasi path_open is called
       },
     });
 
@@ -91,19 +91,19 @@ onmessage = async function (e) {
 
     // Set imports
     let imports = wasi.getImports(wasmModule);
-    imports.env = CSI.getImports();
+    imports.env = ASI.getImports();
     //console.log(imports);
 
     // Instantiate the WebAssembly module
     let instance = await WebAssembly.instantiate(wasmModule, {
-      ...imports, 
+      ...imports,
     });
 
     let mem;
 
-    // Restore memory contents, if provided 
-    if (e.data.memory !== undefined) { 
-      let mem = Base64.decode(e.data.memory); 
+    // Restore memory contents, if provided
+    if (e.data.memory !== undefined) {
+      let mem = Base64.decode(e.data.memory);
 
       let size = mem.byteLength - instance.exports.memory.buffer.byteLength;
       if (size > 0) { // need to adjust memory size
@@ -124,10 +124,10 @@ onmessage = async function (e) {
     console.time("|T: Module Executed for");
     // Start the WASI instance
     try {
-      wasi.start(instance); 
+      wasi.start(instance);
     } catch(e) {
       // WASI throws exception on non-zero return; ignore
-      //console.log(e);  
+      //console.log(e);
     }
     console.timeEnd("|T: Module Executed for");
 

@@ -13,66 +13,125 @@ import * as WorkerMessages from "/worker-msgs.js";
 import SharedArrayCircularBuffer from "/sa-cbuffer.js";
 import { SIGNO } from "/signal.js";
 
+/**
+ * Runtime object definition
+ * @typedef {Object} Runtime
+ * @property {string} [realm="realm"] - realm to use
+ * @property {string} [uuid=uuid4()] - runtime uuid
+ * @property {string} [name="rt-XXXXX@Browser"] - runtime name
+ * @property {number} [max_nmodules=10] - maximum number of modules
+ * @property {string[]} [apis=["wasi:unstable"]] - apis supported by the runtime
+ * @property {string} [reg_topic="realm/proc/reg"] - pubsub topic where the runtime sends register messages
+ * @property {string} [ctl_topic="realm/proc/ctl"] - pubsub topic where the runtime listens for control messages (module create/delete)
+ * @property {string} [arts_ctl_topic="realm/proc/ctl/mod-uuid"] - pubsub topic where the runtime sends unregister messages (ctl_topic+module uuid)
+ * @property {string} [dbg_topic="realm/proc/debug"] - pubsub topic where the runtime sends/receives output (stdout/stdin)
+ * @property {number} [reg_timeout_seconds=30] - how long we wait for responses to register msgs
+ * @property {string} [mqtt_uri] - connection uri for the mqtt server
+ * @property {rtInitCallback} [onInitCallback] - callback when the runtime is done initializing/registering
+ * @property {string} [filestore_location="/store/users/"] - filestore location, for program files
+ * @property {boolean} [dbg=false] - debug flagl more verbose console.log
+ * @property {string} [mqtt_username="non_auth"] - mqtt username
+ * @property {string} [mqtt_token=""] - mqtt token used for auth
+ * @property {modules[]} [modules=[]] - list of modules running
+ * @property {pendingModules[]} [modules=[]] - list of modules waiting to be started (waiting for runtime init)
+ * @property {clientModules[]} [clientModules=[]] - list of client modules that need to be deleted when the client finishes
+ * @property {isRegistered} [boolean=false] - if true, indicates the runtime is already registered 
+ */
+
+/**
+ * Runtime 
+ * @type {Runtime}
+ */
 var runtime;
+
+/** Mqtt client  */
 var mc;
+
+/** Module IO Worker */
 var ioworker;
 
+/** Default realm */
 const dft_realm = "realm";
+/** Default register topic */
 const dft_reg_topic = "proc/reg";
+/** Default control topic */
 const dft_ctl_topic = "proc/control";
+/** Default debug topic */
 const dft_dbg_topic = "proc/debug";
+/** Default apis */
 const dft_apis = ["wasi:unstable"];
+/** Default store location (to find program files) */
 const dft_store_location = "/store/users/";
 
-export async function init(settings) {
-  // handle default settings
-  settings = settings || {};
+/**
+ * @type {RuntimeSettings}
+ */
+const rt_settings = {
+  id: 1,
+  name: 'John Doe',
+  age: 20,
+  isActive: true
+};
 
-  let rrealm = settings.realm !== undefined ? settings.realm : dft_realm;
-  let ruuid = settings.uuid !== undefined ? settings.uuid : uuidv4();
+
+/**
+* Init runtime manager
+* @param {Runtime} rt_settings - runtime settings object; all properties are optional; we use defaults for missing properties
+*/
+export async function init(rt_settings) {
+  // handle default rt_settings
+  rt_settings = rt_settings || {};
+
+  let rrealm = rt_settings.realm !== undefined ? rt_settings.realm : dft_realm;
+  let ruuid = rt_settings.uuid !== undefined ? rt_settings.uuid : uuidv4();
+
+  /**
+   * @type {Runtime}
+   */
   runtime = {
     realm: rrealm,
     uuid: ruuid,
     name:
-      settings.name !== undefined > 1
-        ? settings.name
+      rt_settings.name !== undefined > 1
+        ? rt_settings.name
         : "rt-" + Math.round(Math.random() * 10000) + "@" + navigator.product,
     max_nmodules:
-      settings.max_nmodules !== undefined ? settings.max_nmodules : 10,
-    apis: settings.apis !== undefined ? settings.apis : dft_apis,
+      rt_settings.max_nmodules !== undefined ? rt_settings.max_nmodules : 10,
+    apis: rt_settings.apis !== undefined ? rt_settings.apis : dft_apis,
     reg_topic:
-      settings.reg_topic !== undefined
-        ? settings.reg_topic
+      rt_settings.reg_topic !== undefined
+        ? rt_settings.reg_topic
         : rrealm + "/" + dft_reg_topic,
     ctl_topic:
-      settings.ctl_topic !== undefined
-        ? settings.ctl_topic
+      rt_settings.ctl_topic !== undefined
+        ? rt_settings.ctl_topic
         : rrealm + "/" + dft_ctl_topic + "/" + ruuid + "/#",
     dbg_topic:
-      settings.dbg_topic !== undefined
-        ? settings.dbg_topic
+      rt_settings.dbg_topic !== undefined
+        ? rt_settings.dbg_topic
         : rrealm + "/" + dft_dbg_topic,
     arts_ctl_topic:
-      settings.arts_ctl_topic !== undefined
-        ? settings.arts_ctl_topic
+      rt_settings.arts_ctl_topic !== undefined
+        ? rt_settings.arts_ctl_topic
         : rrealm + "/" + dft_ctl_topic, // arts messages sent here
     reg_timeout_seconds:
-      settings.reg_timeout_seconds !== undefined
-        ? settings.reg_timeout_seconds
+      rt_settings.reg_timeout_seconds !== undefined
+        ? rt_settings.reg_timeout_seconds
         : 30,
-    mqtt_uri: settings.mqtt_uri,
-    onInitCallback: settings.onInitCallback,
+    mqtt_uri: rt_settings.mqtt_uri,
+    /** @callback rtInitCallback */
+    onInitCallback: rt_settings.onInitCallback,
+    filestore_location:
+      rt_settings.filestore_location != undefined
+        ? rt_settings.filestore_location
+        : dft_store_location,
+    dbg: rt_settings.dbg !== undefined ? rt_settings.dbg : false,
+    mqtt_username: rt_settings.mqtt_username !== undefined ? rt_settings.mqtt_username : "non_auth",
+    mqtt_token: rt_settings.mqtt_token !== undefined ? rt_settings.mqtt_token : null,
     modules: [],
     pendingModules: [],
-    client_modules: [],
-    filestore_location:
-      settings.filestore_location != undefined
-        ? settings.filestore_location
-        : dft_store_location,
-    isRegistered: false,
-    dbg: settings.dbg !== undefined ? settings.dbg : false,
-    mqtt_username: settings.mqtt_username !== undefined ? settings.mqtt_username : "non_auth",
-    mqtt_token: settings.mqtt_token !== undefined ? settings.mqtt_token : null,
+    clientModules: [],
+    isRegistered: false
   };
 
   console.info(runtime);
@@ -84,7 +143,7 @@ export async function init(settings) {
 
   // on unload, send delete client modules requests
   window.onbeforeunload = function() {
-    runtime.client_modules.forEach(mod => {
+    runtime.clientModules.forEach(mod => {
       let modDelMsg = ARTSMessages.mod(mod, ARTSMessages.Action.delete);      
       mc.publish(runtime.arts_ctl_topic, modDelMsg);
     });
@@ -120,7 +179,7 @@ export async function init(settings) {
   ioworker = new Worker("moduleio-worker.js");
 }
 
-// get runtime settings
+// get runtime rt_settings
 export function info() {
   return runtime;
 }
@@ -247,7 +306,7 @@ export function createModule(persist_mod) {
   // if instantiate 'per client', save this module uuid to delete before exit
   if (pdata.instantiate == "client") {
     if (runtime.dbg == true) console.log("Saving:", modCreateMsg.data);
-    runtime.client_modules.push(modCreateMsg.data);
+    runtime.clientModules.push(modCreateMsg.data);
   }
 
   // TODO: save pending req uuid and check arts responses
