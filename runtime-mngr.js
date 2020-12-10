@@ -35,11 +35,11 @@ import { SIGNO } from "/signal.js";
  * @property {modules[]} [modules=[]] - list of modules running
  * @property {pendingModules[]} [modules=[]] - list of modules waiting to be started (waiting for runtime init)
  * @property {clientModules[]} [clientModules=[]] - list of client modules that need to be deleted when the client finishes
- * @property {isRegistered} [boolean=false] - if true, indicates the runtime is already registered 
+ * @property {isRegistered} [boolean=false] - if true, indicates the runtime is already registered
  */
 
 /**
- * Runtime 
+ * Runtime
  * @type {Runtime}
  */
 var runtime;
@@ -144,7 +144,7 @@ export async function init(rt_settings) {
   // on unload, send delete client modules requests
   window.onbeforeunload = function() {
     runtime.clientModules.forEach(mod => {
-      let modDelMsg = ARTSMessages.mod(mod, ARTSMessages.Action.delete);      
+      let modDelMsg = ARTSMessages.mod(mod, ARTSMessages.Action.delete);
       mc.publish(runtime.arts_ctl_topic, modDelMsg);
     });
   };
@@ -219,11 +219,11 @@ export function createModule(persist_mod) {
 
   // get mqtt host from globals
   let mqtthost = window.globals ? window.globals.mqttParamZ : undefined;
-  if (mqtthost) { 
+  if (mqtthost) {
     // remove port, scheme and path it exist
     let n = mqtthost.lastIndexOf(":");
-    if (mqtthost.lastIndexOf(":") > -1) { 
-      mqtthost = mqtthost.substring(0, n);    
+    if (mqtthost.lastIndexOf(":") > -1) {
+      mqtthost = mqtthost.substring(0, n);
     }
     mqtthost.replace("wss://", "");
     mqtthost.replace("ws://", "");
@@ -242,17 +242,17 @@ export function createModule(persist_mod) {
         "Error! Object id must be a valid uuid (for instantiate=single)!"
       );
     }
-  } 
+  }
 
   // get query string
   let qstring = QueryString.parse(location.search);
 
-  // variables we replace 
+  // variables we replace
   let rvars = {
-    scene: window.globals ? window.globals.renderParam : qstring["scene"],
+    scene: window.globals.scenenameParam,
     mqtth: mqtthost,
-    cameraid: window.globals ? window.globals.camName : undefined,
-    username: window.globals ? window.globals.displayName : qstring["name"],
+    cameraid: window.globals.camName,
+    username: window.globals.displayName,
     runtimeid: runtime.uuid,
     moduleid: muuid,
     ...qstring, // add all url params
@@ -455,7 +455,7 @@ function handleARTSMsg(msg) {
     // start a worker to run the wasm module
     let mworker = new Worker("module-worker.js");
 
-    if (runtime.dbg == true) console.log("Runtime-Mngr - msg:", msg); 
+    if (runtime.dbg == true) console.log("Runtime-Mngr - msg:", msg);
     if (msg.migratetx_start)
       console.log(
         "|T: Migration - State Publish to Module Startup:",
