@@ -1,8 +1,8 @@
-import * as RuntimeMngr from '/runtime-mngr.js'
+import * as RuntimeMngr from './runtime-mngr.js'
 
-import { SIGNO } from '/signal.js'
+import { SIGNO } from './signal.js'
 
-import * as ARTSMessages from "/arts-msgs.js";
+import * as ARTSMessages from "./arts-msgs.js";
 
 var log_panel;
 
@@ -64,7 +64,7 @@ function runtimeInitDone() {
       ]
     }
   }
-  
+
   RuntimeMngr.createModule(persistm);
 
 /*
@@ -81,10 +81,10 @@ function runtimeInitDone() {
       channels: [{ path: "/ch/wasm-demo", type: "pubsub", mode: "rw", params: { topic: "realm/s/wasm-demo" }}]
     }, ARTSMessages.Action.create);
     // simulate the arrival of a module create message
-    RuntimeMngr.directMessage(RuntimeMngr.info().ctl_topic + "/" + rt_uuid, modCreateMsg); 
-  }, 500);  
+    RuntimeMngr.directMessage(RuntimeMngr.info().ctl_topic + "/" + rt_uuid, modCreateMsg);
+  }, 500);
 */
-    /*    
+    /*
     let fn = "cwlib_example.wasm";
     let mod_uuid = "44c72c87-c4ec-4759-b587-30ddc8590f6b";
     let rt_uuid = RuntimeMngr.runtime.uuid;
@@ -95,8 +95,8 @@ function runtimeInitDone() {
       channels: [{ path: "/ch/light", type: "pubsub", mode: "rw", params: { topic: "kitchen/light" }}]
     }, ARTSMessages.Action.create);
     // simulate the arrival of a module create message
-    RuntimeMngr.mc.simulatePublish(RuntimeMngr.runtime.ctl_topic + "/" + rt_uuid, modCreateMsg); 
-  }, 1000);  
+    RuntimeMngr.mc.simulatePublish(RuntimeMngr.runtime.ctl_topic + "/" + rt_uuid, modCreateMsg);
+  }, 1000);
 */
 /*
   setTimeout( function () {
@@ -109,8 +109,8 @@ function runtimeInitDone() {
       filename: fn
     }, ARTSMessages.Action.create);
     // simulate the arrival of a module create message
-    RuntimeMngr.mc.simulatePublish(RuntimeMngr.runtime.ctl_topic + "/" + rt_uuid, modCreateMsg); 
-  }, 2000);  
+    RuntimeMngr.mc.simulatePublish(RuntimeMngr.runtime.ctl_topic + "/" + rt_uuid, modCreateMsg);
+  }, 2000);
 */
 /*
   setTimeout( function () {
@@ -121,13 +121,13 @@ function runtimeInitDone() {
       parent: { uuid:  rt_uuid },
     }, ARTSMessages.Action.delete);
     modDelMsg.send_to_runtime = rt_uuid;
-    
+
     // simulate the arrival of a module del message
-    RuntimeMngr.mc.simulatePublish(RuntimeMngr.runtime.ctl_topic + "/" + rt_uuid, modDelMsg); 
-  }, 2000);  
+    RuntimeMngr.mc.simulatePublish(RuntimeMngr.runtime.ctl_topic + "/" + rt_uuid, modDelMsg);
+  }, 2000);
 
   setTimeout( function () {
     RuntimeMngr.signal("44c72c87-c4ec-4759-b587-30ddc8590f6b", SIGNO.QUIT);
-}, 5000);  
+}, 5000);
 */
 }

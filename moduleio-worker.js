@@ -6,10 +6,10 @@
  * Copyright (C) Wiselab CMU.
  * @date April, 2020
  */
-import MqttClient from "/mqtt-client.js";
-import * as WorkerMessages from "/worker-msgs.js";
-import * as ARTSMessages from "/arts-msgs.js";
-import SharedArrayCircularBuffer from "/sa-cbuffer.js";
+import MqttClient from "./mqtt-client.js";
+import * as WorkerMessages from "./worker-msgs.js";
+import * as ARTSMessages from "./arts-msgs.js";
+import SharedArrayCircularBuffer from "./sa-cbuffer.js";
 
 const stdin_topic_prefix = "realm/proc/debug/stdin/";
 
@@ -51,7 +51,7 @@ onmessage = async function (e) {
 
     // listen for messages on worker port
     mod[modData.uuid].worker_port = e.data.worker_port;
-    
+
     // set event handler to receive messages from the worker; (when the module finishes)
     //mod[modData.uuid].worker_port.addEventListener('message', onmessage);
     mod[modData.uuid].worker_port.onmessage = onmessage;
@@ -62,14 +62,14 @@ onmessage = async function (e) {
   if (e.data.type == WorkerMessages.msgType.pub_msg) {
     //console.log("publish:", e.data.msg, "->", e.data.dst);
     let modUuid = e.data.mod_uuid;
-    if (mod[modUuid] === undefined) return; // TODO: save messages sent after signal 
+    if (mod[modUuid] === undefined) return; // TODO: save messages sent after signal
     mod[modUuid].mc.publish(e.data.dst, e.data.msg);
     return;
   }
   if (e.data.type == WorkerMessages.msgType.new_stream) {
 
     let modUuid = e.data.mod_uuid;
-        
+
     if (e.data.channel.type === "pubsub") {
 
       // create circular buffer from previously created shared array buffer
@@ -81,7 +81,7 @@ onmessage = async function (e) {
 
       // create circular buffer from previously created shared array buffer
       mod[modUuid].cb["signalfd"] = new SharedArrayCircularBuffer(e.data.shared_array_buffer, "signalfd");
-      
+
     } else {
       // todo
       console.log(e.data.channel.type, ": Channel type not implemented.")
@@ -103,7 +103,7 @@ onmessage = async function (e) {
       return;
     }
     mod[modUuid].cb["signalfd"].push(bytes);
-  
+
     // disconnect mqtt client
     mod[modUuid].mc.disconnect();
 

@@ -5,15 +5,15 @@
  * @date April, 2020
  */
 import { WasmFs } from "@wasmer/wasmfs";
-import { WASI } from "/wasmer-js/packages/wasi/src";
-import browserBindings from "/wasmer-js/packages/wasi/src/bindings/browser.ts";
+import { WASI } from "./wasmer-js/packages/wasi/src";
+import browserBindings from "./wasmer-js/packages/wasi/src/bindings/browser.ts";
 import { lowerI64Imports } from "@wasmer/wasm-transformer";
 
 import * as Base64 from 'base64-arraybuffer'
 
-import * as WorkerMessages from "/worker-msgs.js";
-import * as ASI from "/asi.js";
-import moduleIO from "/moduleio.js"
+import * as WorkerMessages from "./worker-msgs.js";
+import * as ASI from "./asi.js";
+import moduleIO from "./moduleio.js"
 
 onmessage = async function (e) {
   if (e.data.type == WorkerMessages.msgType.start) {

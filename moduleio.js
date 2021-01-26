@@ -5,8 +5,8 @@
  * @date April, 2020
  */
 import { WasmFs } from "@wasmer/wasmfs";
-import SharedArrayCircularBuffer from "/sa-cbuffer.js";
-import * as WorkerMessages from "/worker-msgs.js";
+import SharedArrayCircularBuffer from "./sa-cbuffer.js";
+import * as WorkerMessages from "./worker-msgs.js";
 
 /**
  * Gets stdin from shared buffer (filled by the mqtt worker) and sends stdout/stderr to mqtt worker
@@ -68,7 +68,7 @@ export default class moduleIO {
         console.log('could not parse channels');
       }
     } else modCh = modData.channels;
-    
+
     if (modCh == undefined) return;
     if (modCh.length == 0) return;
 
@@ -228,7 +228,7 @@ export default class moduleIO {
     }
 
     if (iob.buf.length() == 0) return 0;
-    
+
     let bytes = iob.buf.pop(length);
     // place the bytes into the buffer for standard input
     for (let x = 0; x < bytes.length; ++x) {

@@ -7,11 +7,11 @@
 import { v4 as uuidv4 } from "uuid"; // https://www.npmjs.com/package/uuidjs
 import * as QueryString from "query-string";
 
-import MqttClient from "/mqtt-client.js";
-import * as ARTSMessages from "/arts-msgs.js";
-import * as WorkerMessages from "/worker-msgs.js";
-import SharedArrayCircularBuffer from "/sa-cbuffer.js";
-import { SIGNO } from "/signal.js";
+import MqttClient from "./mqtt-client.js";
+import * as ARTSMessages from "./arts-msgs.js";
+import * as WorkerMessages from "./worker-msgs.js";
+import SharedArrayCircularBuffer from "./sa-cbuffer.js";
+import { SIGNO } from "./signal.js";
 
 /**
  * Runtime object definition

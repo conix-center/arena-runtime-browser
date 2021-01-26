@@ -1,4 +1,4 @@
-import * as RuntimeMngr from '/runtime-mngr.js'
+import * as RuntimeMngr from './runtime-mngr.js'
 
-// make RuntimeMngr available 
-ARENA.RuntimeManager = RuntimeMngr;
+// make RuntimeMngr available
+export {RuntimeMngr};

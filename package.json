@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "parcel index.html",
     "prebuild": "shx rm -rf runtime-mngr/*",
-    "build": "parcel build index.js --no-source-maps --public-url ./runtime-mngr -d ./runtime-mngr",
-    "deploy": "rsync -zarvh --delete ./runtime-mngr/* ubuntu@arena-dev1.conix.io:/home/ubuntu/dev/runtime-mngr/runtime-mngr",
+    "build": "parcel build index.js --public-url /runtime-mngr -d ./runtime-mngr",
+    "deploy": "rsync -zarvh --delete ./runtime-mngr/* ubuntu@arena-dev1.conix.io:/home/ubuntu/dev/runtime-mngr/src/runtime-mngr",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
