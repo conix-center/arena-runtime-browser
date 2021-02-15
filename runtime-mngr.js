@@ -33,7 +33,7 @@ import { SIGNO } from "./signal.js";
  * @property {string} [mqtt_username="non_auth"] - mqtt username
  * @property {string} [mqtt_token=""] - mqtt token used for auth
  * @property {modules[]} [modules=[]] - list of modules running
- * @property {pendingModules[]} [modules=[]] - list of modules waiting to be started (waiting for runtime init)
+ * @property {pendingModulesArgs[]} [modules=[]] - list of create arguments for modules waiting to be started (waiting for runtime init)
  * @property {clientModules[]} [clientModules=[]] - list of client modules that need to be deleted when the client finishes
  * @property {isRegistered} [boolean=false] - if true, indicates the runtime is already registered
  */
@@ -129,7 +129,7 @@ export async function init(rt_settings) {
     mqtt_username: rt_settings.mqtt_username !== undefined ? rt_settings.mqtt_username : "non_auth",
     mqtt_token: rt_settings.mqtt_token !== undefined ? rt_settings.mqtt_token : null,
     modules: [],
-    pendingModules: [],
+    pendingModulesArgs: [],
     clientModules: [],
     isRegistered: false
   };
@@ -195,12 +195,12 @@ export function signal(modUuid, signo) {
 
 // create module from persist object
 // will create a module in this runtime or send request message to ARTS
-export function createModule(persist_mod) {
+export function createModule(persist_mod, arena_vars) {
   let pdata = persist_mod.data;
 
   // if runtime is not registered yet, add to pending modules list so they are processed later
   if (runtime.isRegistered == false) {
-    runtime.pendingModules.push(persist_mod);
+    runtime.pendingModulesArgs.push({persist_mod: persist_mod, arena_vars:arena_vars});
     return;
   }
 
@@ -215,20 +215,6 @@ export function createModule(persist_mod) {
       }
     }
     return result;
-  }
-
-  // get mqtt host from globals
-  let mqtthost = window.globals ? window.globals.mqttParamZ : undefined;
-  if (mqtthost) {
-    // remove port, scheme and path it exist
-    let n = mqtthost.lastIndexOf(":");
-    if (mqtthost.lastIndexOf(":") > -1) {
-      mqtthost = mqtthost.substring(0, n);
-    }
-    mqtthost.replace("wss://", "");
-    mqtthost.replace("ws://", "");
-    mqtthost.replace("/mqtt/", "");
-    mqtthost.replace("/mqtt", "");
   }
 
   let muuid = uuidv4(); // for per client, create a random uuid;
@@ -249,12 +235,9 @@ export function createModule(persist_mod) {
 
   // variables we replace
   let rvars = {
-    scene: window.globals.scenenameParam,
-    mqtth: mqtthost,
-    cameraid: window.globals.camName,
-    username: window.globals.displayName,
     runtimeid: runtime.uuid,
     moduleid: muuid,
+    ...arena_vars, // add arena vars passed by argument
     ...qstring, // add all url params
   };
 
@@ -324,14 +307,14 @@ function processPendingModules() {
     return; // we should stop here to avoid duplicating pendingModules list
   }
   // check if we have modules to start
-  if (runtime.pendingModules.length > 0) {
-    runtime.pendingModules.forEach(function(persistm) {
-      console.info("Starting:", persistm.data.name);
-      createModule(persistm);
+  if (runtime.pendingModulesArgs.length > 0) {
+    runtime.pendingModulesArgs.forEach(function(args) {
+      console.info("Starting:", args.persist_mod.data.name);
+      createModule(args.persist_mod, args.arena_vars);
     });
   }
   // empty pending modules
-  runtime.pendingModules = [];
+  runtime.pendingModulesArgs = [];
 }
 
 // register runtime
