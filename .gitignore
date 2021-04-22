@@ -1,3 +1,6 @@
+# ignore local dev settings
+mqtt-dev-settings.js
+
 # Logs
 logs
 *.log

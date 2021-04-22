@@ -1,8 +1,7 @@
 import * as RuntimeMngr from './runtime-mngr.js'
-
 import { SIGNO } from './signal.js'
-
 import * as ARTSMessages from "./arts-msgs.js";
+import { MQTTDevSettings } from './mqtt-dev-settings.js'
 
 var log_panel;
 
@@ -29,43 +28,49 @@ logPanelInit('log_panel');
 
 // get name
 let namePrompt = "r1"
-
+/*
 namePrompt = prompt(
   `Enter a name to identify your client\n`
 );
-
+*/
 logPanelLog("Hi " + namePrompt + ".");
 
-RuntimeMngr.init({ onInitCallback: runtimeInitDone, name: namePrompt });
+RuntimeMngr.init({
+    realm: 'test',
+    onInitCallback: runtimeInitDone,
+    name: namePrompt,
+    mqtt_uri: MQTTDevSettings.mqtt_uri,
+    mqtt_username: MQTTDevSettings.mqtt_username,
+    mqtt_token: MQTTDevSettings.mqtt_token
+  });
 
 function runtimeInitDone() {
   console.log("Runtime init done.");
 
-  let persistm = {
+  const avars = {
+      scene: 'test',
+      namespace: 'public',
+      cameraid: 'camera',
+      username: 'user',
+      mqtth: 'arena-dev1.conix.io'
+  };
+
+  const persistm = {
     object_id: "18881342-4111-488d-9301-064ad9b4d39b",
     type: "program",
     data: {
-      name: "user1/program1",
-      instantiate: "single",
-      filename: "program1.wasm",
-      filetype: "WA",
+      name: "arena/py/test",
+      instantiate: "client",
+      filename: "test.py",
+      filetype: "PY",
       affinity: "any",
-      args: ["${scene} ${test1}"],
-      env: [],
-      channels: [
-        {
-          path: "/ch/${scene}",
-          type: "pubsub",
-          mode: "r",
-          params: {
-            topic: "realm/s/${scene}"
-          }
-        }
-      ]
+      args: ["${scene}","${test1}"],
+      env: ["SCENE=${scene}", "MQTTH=arena-dev1.conix.io", "REALM=realm", "NAMESPACE=public"],
+      channels: []
     }
   }
 
-  RuntimeMngr.createModule(persistm);
+  RuntimeMngr.createModule(persistm, avars);
 
 /*
   setTimeout( function () {

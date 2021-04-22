@@ -241,10 +241,12 @@ export function createModule(persist_mod, arena_vars) {
     ...qstring, // add all url params
   };
 
-  // convert args and env to strings and replace variables
+  // replace variables in args and env
   let args, env;
-  if (pdata.args) args = replaceVars(pdata.args.join(" "), rvars);
-  if (pdata.env) env = replaceVars(pdata.env.join(" "), rvars);
+  //if (pdata.args) args = replaceVars(pdata.args.join(" "), rvars);
+  //if (pdata.env) env = replaceVars(pdata.env.join(" "), rvars);
+  if (pdata.args) args = pdata.args.map(arg => replaceVars(arg, rvars));
+  if (pdata.env) env = pdata.env.map(env => replaceVars(env, rvars));
 
   // replace variables in channel path and params
   if (pdata.channels) {
